@@ -91,12 +91,13 @@ function vmshellstripecashapp_link($params)
     $totalAmountCents = (int)($amount * 100);
     $returnUrl = htmlspecialchars($params['systemurl'] . '/viewinvoice.php?id=' . $invoiceId . '&payment=success', ENT_QUOTES, 'UTF-8');
 
-    $stripe = new StripeClient($secretKey);
+    // 设置 Stripe API 密钥
+    Stripe::setApiKey($secretKey);
     Stripe::setApiVersion('2024-06-20');
 
     try {
         // 创建 PaymentIntent
-        $paymentIntent = $stripe->paymentIntents->create([
+        $paymentIntent = PaymentIntent::create([
             'amount' => $totalAmountCents,
             'currency' => $gatewayCurrency,
             'payment_method_types' => ['cashapp'],
@@ -140,7 +141,12 @@ function vmshellstripecashapp_link($params)
                 margin-top: 10px; 
                 color: red; 
             }
+            #cashapp-element {
+                margin: 20px auto;
+                width: 300px;
+            }
         </style>';
+        $htmlOutput .= '<div id="cashapp-element"></div>';
         $htmlOutput .= '<button id="cashapp-button">使用 CashApp 支付 ' . number_format($amount, 2) . ' ' . strtoupper($gatewayCurrency) . '</button>';
         $htmlOutput .= '<div id="payment-status"></div>';
         $htmlOutput .= '<div id="error-message"></div>';
@@ -154,22 +160,32 @@ function vmshellstripecashapp_link($params)
                 const statusDiv = document.getElementById('payment-status');
                 const errorDiv = document.getElementById('error-message');
 
-                console.log('Stripe 初始化完成，clientSecret:', clientSecret);
+                // 初始化 Stripe Elements
+                const elements = stripe.elements({ clientSecret: clientSecret });
+                const paymentElement = elements.create('payment', {
+                    paymentMethodTypes: ['cashapp']
+                });
+                paymentElement.mount('#cashapp-element');
+
+                console.log('Stripe Elements 初始化完成，clientSecret:', clientSecret);
 
                 payButton.addEventListener('click', async function() {
                     payButton.disabled = true;
-                    statusDiv.textContent = '正在跳转至 CashApp 支付页面...';
+                    statusDiv.textContent = '正在处理 CashApp 支付...';
                     errorDiv.textContent = '';
 
                     try {
-                        const result = await stripe.handleCashAppPayment(clientSecret, {
-                            return_url: '$returnUrl'
+                        const result = await stripe.confirmPayment({
+                            elements: elements,
+                            confirmParams: {
+                                return_url: '$returnUrl'
+                            }
                         });
 
-                        console.log('handleCashAppPayment 返回结果:', result);
+                        console.log('confirmPayment 返回结果:', result);
 
                         if (result.error) {
-                            errorDiv.textContent = '支付失败：' + result.error.message;
+                            errorDiv.textContent = '支付失败：' + result.error.message + ' (Code: ' + result.error.code + ')';
                             statusDiv.textContent = '';
                             payButton.disabled = false;
                         } else if (result.paymentIntent) {
@@ -186,7 +202,7 @@ function vmshellstripecashapp_link($params)
                         }
                     } catch (error) {
                         console.error('支付处理错误:', error);
-                        errorDiv.textContent = '支付处理错误：' + error.message;
+                        errorDiv.textContent = '支付处理错误：' + (error.message || '未知错误') + ' (请检查控制台)';
                         statusDiv.textContent = '';
                         payButton.disabled = false;
                     }
@@ -209,7 +225,7 @@ function vmshellstripecashapp_link($params)
                         }
                     }).catch(function(error) {
                         console.error('检查状态错误:', error);
-                        errorDiv.textContent = '检查状态错误：' + error.message;
+                        errorDiv.textContent = '检查状态错误：' + (error.message || '未知错误');
                     });
                 }
             })();
@@ -240,11 +256,12 @@ function vmshellstripecashapp_refund($params)
     $refundableAmount = max(0, $amount - $feeAmount);
     $refundAmountCents = (int)($refundableAmount * 100);
 
-    $stripe = new StripeClient($secretKey);
+    // 设置 Stripe API 密钥
+    Stripe::setApiKey($secretKey);
     Stripe::setApiVersion('2024-06-20');
 
     try {
-        $refund = $stripe->refunds->create([
+        $refund = Refund::create([
             'payment_intent' => $transactionId,
             'amount' => $refundAmountCents,
             'metadata' => [
