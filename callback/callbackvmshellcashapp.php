@@ -82,6 +82,7 @@ switch ($event->type) {
                 'gross_amount' => $grossAmount,
                 'fee_amount' => $feeAmount,
                 'net_amount' => $netAmount,
+                'next_action' => $paymentIntent->next_action ? (array)$paymentIntent->next_action : null,
             ], '支付成功');
         } else {
             logTransaction($gatewayModule, ['error' => '无效的支付数据'], '支付失败');
