@@ -5,7 +5,7 @@ payment_intent.succeeded
 payment_intent.payment_failed
 
 （可选）charge.refunded
-
+<p><a href="https://linuxword.com/wp-content/uploads/2025/04/stripe-vmshell-cashapp.png"><img class="alignnone size-full wp-image-45118" src="https://linuxword.com/wp-content/uploads/2025/04/stripe-vmshell-cashapp.png" alt="" width="709" height="607" /></a></p>
 概述：
 随着全球支付方式的多样化，越来越多的用户倾向于使用本地化的支付渠道完成交易。对于美国及其他地区的客户来说，CashApp 是一种便捷的支付方式之一。为了满足这些市场的需求，我们开发了 WHMCS-Stripe-CashApp 支付网关插件。此插件通过 Stripe 提供的 CashApp 支付通道，将 WHMCS 与 CashApp 支付完美结合，让商家无需复杂的开发与申请，即可快速接入 CashApp 支付，提升美国及其他地区客户的支付体验。
 
